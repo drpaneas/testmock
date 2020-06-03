@@ -11,7 +11,10 @@ import (
 // it returns the result of the PingService if it's HTTP 200
 // it returns nothing if it's HTTP 404
 func PingController(c *gin.Context) {
-	result, err := services.PingService()
+	// We have no way of handling services.PingService() because there is no public var or functions
+	// we need to create a variable section in the service and
+	// e.g. problem: result, err := services.PingService()
+	result, err := services.PingServiceVar.PingService()
 	if err != nil {
 		// So now we cannot test this, unless we fake the service to Fail on purpose
 		// we need to have complete function of what services.PingService() returns
