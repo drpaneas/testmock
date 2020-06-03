@@ -7,19 +7,10 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang/mock/gomock"
+	mock_services "github.com/testmock/mocks"
 	"github.com/testmock/services"
 )
-
-// Here we are going to implement our fake method
-type mockPingServiceStruct struct {
-	// create a function sig so we can fill it later
-	FakePingService func() (string, error)
-}
-
-func (mock mockPingServiceStruct) PingService() (string, error) {
-	fmt.Println("I am faking the complex things.")
-	return mock.FakePingService()
-}
 
 func TestPingControllerNoError(t *testing.T) {
 
@@ -36,11 +27,11 @@ func TestPingControllerNoError(t *testing.T) {
 	// which calls it like this: services.PingServiceVar.PingService()
 	// HACK services.PingServiceVar to point to the fake Service
 
-	// Create a local variable and inster the structure
-	mockPingController := mockPingServiceStruct{}
-	mockPingController.FakePingService = func() (string, error) {
-		return "pong", nil
-	}
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockPingController := mock_services.NewMockpingServiceInterface(mockCtrl)
+	mockPingController.EXPECT().PingService().Return("pong", nil)
+
 	services.PingServiceVar = mockPingController // <-- this is the hack
 
 	// Now I can mess around with the function
@@ -68,11 +59,11 @@ func TestPingControllerWithError(t *testing.T) {
 	fakeResponseWriter := httptest.NewRecorder()
 	fakeGinContext, _ := gin.CreateTestContext(fakeResponseWriter)
 
-	mockPingController := mockPingServiceStruct{}
-	mockPingController.FakePingService = func() (string, error) {
-		err := fmt.Errorf(http.StatusText(http.StatusInternalServerError))
-		return "", err
-	}
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockPingController := mock_services.NewMockpingServiceInterface(mockCtrl)
+	err := fmt.Errorf(http.StatusText(http.StatusInternalServerError))
+	mockPingController.EXPECT().PingService().Return("", err)
 	services.PingServiceVar = mockPingController // <-- this is the hack
 	PingController(fakeGinContext)
 
